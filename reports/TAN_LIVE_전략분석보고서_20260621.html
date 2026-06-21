@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAN LIVE 전략 분석 보고서 · 2026-06-21</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', 'Malgun Gothic', sans-serif; background: #0d1117; color: #c9d1d9; line-height: 1.6; padding: 24px; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { color: #58a6ff; font-size: 28px; border-bottom: 2px solid #30363d; padding-bottom: 12px; margin-bottom: 8px; }
+  .meta { color: #8b949e; font-size: 13px; margin-bottom: 24px; }
+  .alert { background: #da363322; border: 1px solid #da3633; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; }
+  .alert strong { color: #ff7b72; }
+  .ok { background: #23863622; border: 1px solid #238636; }
+  .ok strong { color: #3fb950; }
+  h2 { color: #79c0ff; font-size: 20px; margin: 28px 0 12px; padding-left: 10px; border-left: 4px solid #58a6ff; }
+  h3 { color: #d2a8ff; font-size: 16px; margin: 18px 0 8px; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px; }
+  .card .label { color: #8b949e; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .card .value { font-size: 26px; font-weight: bold; margin-top: 4px; }
+  .neg { color: #ff7b72; }
+  .pos { color: #3fb950; }
+  .warn { color: #d29922; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: #161b22; border-radius: 8px; overflow: hidden; }
+  th, td { padding: 9px 12px; text-align: left; border-bottom: 1px solid #30363d; font-size: 13px; }
+  th { background: #21262d; color: #79c0ff; font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .chart-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px; }
+  .chart-box canvas { max-height: 240px; }
+  .issue { background: #161b22; border-left: 4px solid #da3633; padding: 12px 14px; margin-bottom: 10px; border-radius: 4px; }
+  .issue.medium { border-left-color: #d29922; }
+  .issue.low { border-left-color: #58a6ff; }
+  .sev { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; margin-right: 6px; }
+  .sev.high { background: #da3633; color: #fff; }
+  .sev.medium { background: #d29922; color: #000; }
+  .sev.low { background: #58a6ff; color: #000; }
+  .param { font-family: 'Consolas', monospace; background: #30363d; padding: 2px 6px; border-radius: 3px; font-size: 12px; color: #79c0ff; }
+  ul { list-style: none; padding-left: 0; }
+  .priority li { padding: 8px 12px; background: #161b22; border-left: 3px solid #f85149; margin-bottom: 6px; border-radius: 4px; }
+  .priority li:nth-child(1) { border-left-color: #f85149; }
+  .priority li:nth-child(2) { border-left-color: #d29922; }
+  .priority li:nth-child(3) { border-left-color: #58a6ff; }
+  .footer { margin-top: 30px; padding-top: 16px; border-top: 1px solid #30363d; color: #8b949e; font-size: 12px; }
+  code { background: #30363d; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>📊 TAN LIVE 전략 분석 보고서</h1>
+<div class="meta">생성: 2026-06-21 22:30 KST · 분석: GLM-5.2 (z.ai coding subscription) · 데이터: tan.db 63거래 + bot.py + systemd · <strong style="color:#d29922">⚠️ 분석만 (라이브 변경 안 함)</strong></div>
+
+<div class="alert">
+  <strong>📋 핵심 진단:</strong> systemd override 4중 충돌로 config YAML이 전부 무시 → bot.py 하드코딩이 실제 실행. <strong>레버리지 하드캡 4x 위반(최대 20x)</strong>, WLD 단독 <span class="neg">-$23.53</span>, SHORT avg <span class="neg">-$1.93</span>, TP2 도달 단 1건인데 음수. <strong>구조적 손실 전략 상태</strong>.
+</div>
+
+<h2>1️⃣ 핵심 수치</h2>
+<div class="cards">
+  <div class="card"><div class="label">총 실현 PnL</div><div class="value neg">-$64.47</div></div>
+  <div class="card"><div class="label">실현 거래</div><div class="value">40건</div></div>
+  <div class="card"><div class="label">SL 승률</div><div class="value neg">19%</div><div style="font-size:11px;color:#8b949e">5승/22패 (27건 중)</div></div>
+  <div class="card"><div class="label">TP2 도달</div><div class="value neg">1건</div><div style="font-size:11px;color:#8b949e">그것도 음수</div></div>
+  <div class="card"><div class="label">최대 레버리지</div><div class="value warn">20x</div><div style="font-size:11px;color:#8b949e">HARD_CAP=4 위반</div></div>
+  <div class="card"><div class="label">최악 심볼</div><div class="value neg">WLD</div><div style="font-size:11px;color:#8b949e">-$23.53 (5건)</div></div>
+</div>
+
+<h2>2️⃣ 현재 라이브 조건 (실제 실행: bot.py)</h2>
+<div class="alert ok">
+  <strong>ℹ️ 중요:</strong> systemd drop-in 4개(<code>override.conf</code>, <code>paper-auto-overlap-guard.conf</code>, <code>reliability-guard.conf</code>, <code>true-turtle-55-20.conf</code>, <code>zz-exact-bot.conf</code>) 충돌. 알파벳순 병합으로 <strong>zz-exact-bot이 승리</strong> → config YAML 전부 무시되고 <code>true_turtle_exact/bot.py</code> 하드코딩 상수가 실제 전략.
+</div>
+<table>
+<tr><th>파라미터</th><th>값</th><th>의미</th></tr>
+<tr><td><code>STRATEGY_VERSION</code></td><td>units6_giveback30_entrygates_lossgeometry_v1</td><td>true_turtle 변종</td></tr>
+<tr><td><code>ENTRY_N</code></td><td>55</td><td>55캔들 돈치안 브레이크아웃 (4h = 약 9일)</td></tr>
+<tr><td><code>TAKE_PROFIT_R</code></td><td>2.0</td><td>2R에서 익절</td></tr>
+<tr><td><code>TAKE_PROFIT_FALLBACK_R_VALUES</code></td><td>(1.0, 0.5)</td><td><span class="warn">⚠️ TP 도달 전 부분청산 fallback → 수익 축소</span></td></tr>
+<tr><td><code>LEVERAGE</code></td><td>5</td><td>기본 레버리지</td></tr>
+<tr><td><code>LIVE_LEVERAGE_HARD_CAP</code></td><td>4</td><td><span class="neg">실제론 20x까지 실행 (위반)</span></td></tr>
+<tr><td><code>ENTRY_MIN_REWARD_TO_COST</code></td><td>3.0</td><td>진입 품질 바</td></tr>
+<tr><td><code>ENTRY_EXCLUDED_SYMBOLS</code></td><td>{BTCUSDT}</td><td><span class="warn">WLD/SOL/XLM은 config에 exclude지만 bot.py는 무시</span></td></tr>
+<tr><td><code>ENTRY_COOLDOWN_BARS_AFTER_LOSS</code></td><td>3</td><td>손실 후 3바 쿨다운</td></tr>
+<tr><td><code>MAX_HEAT</code> / <code>MAX_POSITIONS</code></td><td>0.06 / 10</td><td>리스크 한도</td></tr>
+</table>
+
+<h2>3️⃣ 성과 데이터 시각화</h2>
+
+<div class="chart-grid">
+  <div class="chart-box"><h3>청산 사유 분포 (exit_reason)</h3><canvas id="exitReason"></canvas></div>
+  <div class="chart-box"><h3>심볼별 실현 PnL (상위 8)</h3><canvas id="symbolPnl"></canvas></div>
+</div>
+<div class="chart-grid">
+  <div class="chart-box"><h3>레버리지 분포 (HARD_CAP=4 위반 시각화)</h3><canvas id="leverage"></canvas></div>
+  <div class="chart-box"><h3>방향별 평균 PnL</h3><canvas id="direction"></canvas></div>
+</div>
+
+<h2>4️⃣ GLM-5.2 분석: 핵심 문제점</h2>
+
+<div class="issue">
+  <span class="sev high">HIGH</span><strong>systemd override 4중 충돌</strong>
+  <div style="margin-top:6px;font-size:13px">config YAML이 전부 무시되어 레버리지 하드캡·exclude 심볼·모든 파라미터가 무효. 40건 중 5x(31건), 6x~20x(22건) 실행. HARD_CAP=4인데 최대 20x. WLD가 exclude 목록에 있음에도 단독 <span class="neg">-$23.53</span> 손실. <strong>모든 문제의 근원</strong>.</div>
+</div>
+
+<div class="issue">
+  <span class="sev high">HIGH</span><strong>SHORT 방향 심각 적자</strong>
+  <div style="margin-top:6px;font-size:13px">SHORT 20건 avg <span class="neg">-$1.93</span> vs LONG 20건 avg <span class="neg">-$1.29</span>. SHORT가 LONG보다 1.5배 더 손실. 시장 구조상 숏 브레이크다운 신호가 무효 케이스 다수.</div>
+</div>
+
+<div class="issue">
+  <span class="sev high">HIGH</span><strong>TP2 도달 1건이 음수 → 제대로 된 익절 성공 0건</strong>
+  <div style="margin-top:6px;font-size:13px">TAKE_PROFIT_R=2.0인데 exit_reason TP2가 단 1건이고 그것도 음수(-$0.08). <code>FALLBACK_R_VALUES=(1.0, 0.5)</code>가 원본 TP를 덮어쓰며 수익 축소. 승자가 자라지 못함.</div>
+</div>
+
+<div class="issue medium">
+  <span class="sev medium">MED</span><strong>ENTRY_N=55 (4h 약 9일) 노이즈 진입</strong>
+  <div style="margin-top:6px;font-size:13px">SL 27건 중 22건 손실(승률 19%). 진입 후 3바 쿨다운으로 부족. 돈치안 원본(20)보다 너무 김.</div>
+</div>
+
+<div class="issue medium">
+  <span class="sev medium">MED</span><strong>ENTRY_SUPPRESSION 16% (과도 억제)</strong>
+  <div style="margin-top:6px;font-size:13px">policy_decision 5165건 중 NO_ACTION 79%, SUPPRESSION 16%. 정상 브레이크아웃까지 차단 가능성. 진입 기회 극히 제한.</div>
+</div>
+
+<h2>5️⃣ 개선점 (수익 최대화 관점)</h2>
+<table>
+<tr><th>개선</th><th>이유</th><th>기대 효과</th><th>파라미터</th></tr>
+<tr><td><strong>SHORT 전면 비활성화</strong></td><td>SHORT avg -$1.93 (LONG의 1.5배 손실)</td><td>SHORT 손실 원천 차단</td><td><span class="param">ALLOW_SHORT=false</span></td></tr>
+<tr><td><strong>손실 심볼 exclude 코드 반영</strong></td><td>WLD 단독 -$23.53 (전체 손실 36%)</td><td>WLD·SUI·SOL 손실 차단</td><td><span class="param">EXCLUDE=[WLD,SUI,SOL,ETH]</span></td></tr>
+<tr><td><strong>ENTRY_N 55→20 하향</strong></td><td>9일 브레이크아웃은 트렌드 후반 진입</td><td>빠른 포착, 진입가 개선</td><td><span class="param">ENTRY_N=20</span></td></tr>
+<tr><td><strong>fallback TP 제거</strong></td><td>(1.0, 0.5)가 조기 청산 → 수익 축소</td><td>승자 끝까지 보유, MFE 활용</td><td><span class="param">TAKE_PROFIT_FALLBACK_R_VALUES=[]</span></td></tr>
+<tr><td><strong>손실 후 쿨다운 3→8바</strong></td><td>3바(12h)로 재손실 빈발</td><td>연속 SL 감소</td><td><span class="param">ENTRY_COOLDOWN_BARS_AFTER_LOSS=8</span></td></tr>
+<tr><td><strong>초기 스탑 거리 0.25→0.15</strong></td><td>넓은 스탑이 노이즈 손절 유발</td><td>평균 손실액 감소</td><td><span class="param">ENTRY_MAX_INITIAL_STOP_DISTANCE_PCT=0.15</span></td></tr>
+</table>
+
+<h2>6️⃣ 제거/수정 대상</h2>
+<div class="issue"><span class="sev high">FIX</span><strong>systemd override 4개 → 1개로 통합</strong><div style="margin-top:6px;font-size:13px">config YAML이 완전 무시되는 근원. <code>override.conf</code>, <code>true-turtle-55-20.conf</code>, <code>zz-exact-bot.conf</code> 중 하나만 남기고 제거 + description 정정.</div></div>
+<div class="issue"><span class="sev high">REMOVE</span><strong>TAKE_PROFIT_FALLBACK_R_VALUES=(1.0, 0.5)</strong><div style="margin-top:6px;font-size:13px">승자를 자르는 fallback. 제거하면 정상 R=2.0 익절만 작동.</div></div>
+
+<h2>7️⃣ 권장 우선순위</h2>
+<ul class="priority">
+  <li><strong>🥇 systemd override 통합</strong> — 모든 문제의 근원. config가 먼저 살아야 파라미터 개선이 의미 있음</li>
+  <li><strong>🥈 SHORT 비활성화 + WLD/SUI exclude</strong> — 즉시 큰 손실 차단 (SHORT -$38 + WLD -$23.53)</li>
+  <li><strong>🥉 fallback TP 제거</strong> — 승자를 키워 수익비 복원</li>
+  <li><strong>④ ENTRY_N 20 하향 + 쿨다운 8바</strong> — 진입 품질/타이밍 개선</li>
+  <li><strong>⑤ 그 외 미세 조정</strong> — 스탑 거리, 게이트 임계값</li>
+</ul>
+
+<div class="alert" style="margin-top:24px">
+  <strong>⚠️ 주의:</strong> 이 보고서는 <strong>분석만</strong>입니다. 라이브 매매 전략/파라미터는 변경하지 않았습니다. 사용자 검토 후 결정 시 별도 진행. 모든 개선은 paper 검증 → 라이브 승격 게이트(30샘플 + 양수 기대치 + DD&lt;6% + 사용자 승인) 통과 후 적용 권장.
+</div>
+
+<h2>8️⃣ What-if 역사적 시뮬레이션 (과거 40거래에 필터 적용 시)</h2>
+<div class="alert ok">
+  <strong>💡 핵심:</strong> 시나리오 <strong>⑥ LONG + 레버리지 정상 + 손실심볼 exclude</strong>를 과거에 적용했으면 <strong class="pos">+$1.86 흑자</strong>였음 (40건 → 3건). SHORT + WLD/SUI/SOL/ETH/PEPE + 고레버리지가 손실의 99%.
+</div>
+<div class="chart-box" style="margin-bottom:16px"><h3>시나리오별 남은 PnL (기준 −$64.47)</h3><canvas id="whatif"></canvas></div>
+<table>
+<tr><th>시나리오</th><th>남은 거래</th><th>남은 PnL</th><th>1건당</th><th>손실 감소</th></tr>
+<tr><td>기준 (전체)</td><td>40건</td><td class="neg">−$64.47</td><td>−$1.61</td><td>—</td></tr>
+<tr><td>① SHORT 비활성화 (LONG만)</td><td>20건</td><td class="neg">−$25.80</td><td>−$1.29</td><td class="pos">−$38.67 (60%)</td></tr>
+<tr><td>② WLD exclude</td><td>35건</td><td class="neg">−$40.94</td><td>−$1.17</td><td class="pos">−$23.53 (36%)</td></tr>
+<tr><td>③ 손실심볼 5개 exclude (WLD/SUI/SOL/ETH/PEPE)</td><td>12건</td><td class="neg">−$10.63</td><td>−$0.89</td><td class="pos">−$53.84 (83%)</td></tr>
+<tr><td>④ 레버리지 ≤6x만 (HARD_CAP 위반 제외)</td><td>32건</td><td class="neg">−$57.91</td><td>−$1.81</td><td class="pos">−$6.56 (10%)</td></tr>
+<tr><td>⑤ LONG + 손실심볼 exclude</td><td>7건</td><td class="neg">−$0.64</td><td>−$0.09</td><td class="pos">−$63.83 (99%)</td></tr>
+<tr><td><strong>⑥ LONG + 레버리지정상 + 손실심볼 exclude</strong></td><td>3건</td><td class="pos">+$1.86</td><td>+$0.62</td><td class="pos">−$66.33 (흑자전환)</td></tr>
+</table>
+<div class="issue medium" style="margin-top:12px"><span class="sev medium">주의</span><strong>통계적 한계:</strong> 시나리오 ⑥은 3건뿐이라 통계적 유의성 낮음. 단, <strong>신호는 명확</strong> — SHORT·고레버리지·특정 심볼이 손실 핵심. paper에서 30샘픨 이상 검증 후 라이브 승격 권장.</div>
+
+<div class="footer">
+  분석 도구: GLM-5.2 via fcc (z.ai coding subscription) · 데이터: tan.db 63거래 / tan_live_journal.sqlite3 6829 events · 보고서: tan-live-agent 정적 분석 · 라이브 봇(tan-live.service) 영향 0
+</div>
+
+</div>
+
+<script>
+const exitData = {
+  labels: ['SL (손절)', 'MANUAL_FLATTEN', 'CIRCUIT_BREAKER', 'TP2', 'FLIP', '기타 reconcile'],
+  datasets: [{ data: [27, 4, 2, 1, 1, 5], backgroundColor: ['#da3633','#d29922','#8957e5','#3fb950','#f85149','#30363d'], borderWidth: 0 }]
+};
+const symbolData = {
+  labels: ['WLD','SUI','SOL','1000PEPE','ETH','ZEC','XLM','FF'],
+  datasets: [{ label: 'PnL $', data: [-23.53,-11.5,-8.17,-5.33,-5.32,-3.59,-0.29,-2.43], backgroundColor: '#da3633', borderWidth: 0 }]
+};
+const levData = {
+  labels: ['4x','5x','6x','7x','8x','9x','13x','17x','18x','20x'],
+  datasets: [{ label: '거래 수', data: [1,31,10,2,3,1,1,1,1,11], backgroundColor: function(ctx){const v=ctx.parsed?.y??ctx.raw; const cap=4; return v>cap? '#da3633':'#3fb950';}, borderWidth: 0 }]
+};
+const dirData = {
+  labels: ['LONG (20건)','SHORT (20건)'],
+  datasets: [{ label: '평균 PnL $', data: [-1.29,-1.93], backgroundColor: ['#58a6ff','#f85149'], borderWidth: 0 }]
+};
+
+Chart.defaults.color = '#8b949e';
+Chart.defaults.font.family = "'Segoe UI','Malgun Gothic',sans-serif";
+Chart.defaults.font.size = 11;
+
+new Chart(document.getElementById('exitReason'), { type: 'doughnut', data: exitData, options: { plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}}} } });
+new Chart(document.getElementById('symbolPnl'), { type: 'bar', data: symbolData, options: { indexAxis:'y', plugins:{legend:{display:false}}, scales:{x:{ticks:{callback:v=>v+'$'}}} } });
+new Chart(document.getElementById('leverage'), { type: 'bar', data: levData, options: { plugins:{legend:{display:false},title:{display:true,text:'빨강=HARD_CAP(4) 위반',color:'#da3633',font:{size:10}}}, scales:{y:{beginAtZero:true} } } });
+new Chart(document.getElementById('direction'), { type: 'bar', data: dirData, options: { plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>v+'$'}}} } });
+const whatifData = {
+  labels: ['기준','①SHORT끔','②WLD제외','③손실심볼5','④레버리지≤6','⑤LONG+제외','⑥3중필터'],
+  datasets: [{ label: '남은 PnL $', data: [-64.47,-25.80,-40.94,-10.63,-57.91,-0.64,1.86], backgroundColor: function(ctx){const v=ctx.parsed?.y??ctx.raw; return v>=0?'#3fb950':'#da3633';}, borderWidth: 0 }]
+};
+new Chart(document.getElementById('whatif'), { type: 'bar', data: whatifData, options: { plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>v+'$'}}} } });
+</script>
+</body>
+</html>

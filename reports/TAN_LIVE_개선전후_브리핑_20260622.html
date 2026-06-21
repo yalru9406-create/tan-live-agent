@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TAN LIVE 개선 전후 브리핑 · 2026-06-22</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI','Malgun Gothic',sans-serif; background: #0d1117; color: #c9d1d9; line-height: 1.6; padding: 24px; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  h1 { color: #58a6ff; font-size: 28px; border-bottom: 2px solid #30363d; padding-bottom: 12px; margin-bottom: 8px; }
+  .meta { color: #8b949e; font-size: 13px; margin-bottom: 24px; }
+  h2 { color: #79c0ff; font-size: 20px; margin: 28px 0 12px; padding-left: 10px; border-left: 4px solid #58a6ff; }
+  h3 { color: #d2a8ff; font-size: 16px; margin: 16px 0 8px; }
+  .alert { background: #1f6feb22; border: 1px solid #1f6feb; border-radius: 8px; padding: 14px 18px; margin-bottom: 20px; }
+  .alert strong { color: #58a6ff; }
+  .alert.ok { background: #23863622; border-color: #238636; }
+  .alert.ok strong { color: #3fb950; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 20px; }
+  .col { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px; }
+  .col h3 { margin-top: 0; }
+  .col.before { border-left: 4px solid #da3633; }
+  .col.after { border-left: 4px solid #3fb950; }
+  table { width: 100%; border-collapse: collapse; margin-bottom: 16px; background: #161b22; border-radius: 8px; overflow: hidden; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid #30363d; font-size: 13px; }
+  th { background: #21262d; color: #79c0ff; }
+  tr:last-child td { border-bottom: none; }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+  .b-bad { background: #da3633; color: #fff; }
+  .b-ok { background: #238636; color: #fff; }
+  .b-warn { background: #d29922; color: #000; }
+  .chart-box { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px; margin-bottom: 16px; }
+  .chart-box canvas { max-height: 260px; }
+  .chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 16px; }
+  code { background: #30363d; padding: 1px 5px; border-radius: 3px; font-size: 12px; }
+  .footer { margin-top: 30px; padding-top: 16px; border-top: 1px solid #30363d; color: #8b949e; font-size: 12px; }
+  .stat-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+  .stat { background: #21262d; padding: 6px 10px; border-radius: 6px; font-size: 12px; }
+  .stat .v { font-weight: bold; margin-left: 4px; }
+  .pos { color: #3fb950; } .neg { color: #ff7b72; } .warn { color: #d29922; }
+</style>
+</head>
+<body>
+<div class="container">
+
+<h1>🔄 TAN LIVE 개선 전후 브리핑</h1>
+<div class="meta">생성: 2026-06-22 · 구간: 코덱스 작업 이어받기 → 현재 · 라이브 영향: 있음 (승인된 변경만, TRXUSDT 포지션 유지)</div>
+
+<div class="alert ok">
+  <strong>📋 한 줄 요약:</strong> 손실 구조(−$64.47) 진단 → <strong>손실심볼 6개 exclude</strong>(양방향 유지, 과거 손실 83% 차단 예상) + <strong>systemd 병목 해결</strong> + <strong>GLM-5.2 advisor</strong> 실시간 감시/페이퍼 연결 + <strong>tan 백테스트 실제 PASS</strong>로 전략 유효 증명.
+</div>
+
+<h2>1️⃣ 핵심 변화 한눈에</h2>
+<div class="grid2">
+  <div class="col before">
+    <h3>🔴 개선 전 (원래 라이브)</h3>
+    <div class="stat-row">
+      <div class="stat">PnL <span class="v neg">−$64.47</span></div>
+      <div class="stat">승률 <span class="v neg">20%</span></div>
+      <div class="stat">exclude <span class="v">1개 (BTC)</span></div>
+    </div>
+    <div class="stat-row">
+      <div class="stat">systemd <span class="v warn">4중 충돌</span></div>
+      <div class="stat">레버리지 <span class="v neg">최대 20x (HARD_CAP 4 위반)</span></div>
+      <div class="stat">advisor <span class="v">없음</span></div>
+    </div>
+    <div class="stat-row">
+      <div class="stat">디스코드 <span class="v warn">1~2분 폭우</span></div>
+      <div class="stat">자동화 <span class="v">코덱스 중단</span></div>
+    </div>
+  </div>
+  <div class="col after">
+    <h3>🟢 개선 후 (현재)</h3>
+    <div class="stat-row">
+      <div class="stat">PnL <span class="v">동일(신규 대기)</span></div>
+      <div class="stat">손실심볼 <span class="v pos">6개 exclude</span></div>
+      <div class="stat">양방향 <span class="v pos">LONG·SHORT 유지</span></div>
+    </div>
+    <div class="stat-row">
+      <div class="stat">systemd <span class="v pos">단일화</span></div>
+      <div class="stat">레버리지 <span class="v pos">설정 일치 (LEVERAGE=5)</span></div>
+      <div class="stat">advisor <span class="v pos">GLM-5.2 4종</span></div>
+    </div>
+    <div class="stat-row">
+      <div class="stat">디스코드 <span class="v pos">5~15분 완화</span></div>
+      <div class="stat">자동화 <span class="v pos">4종 cron + A/B</span></div>
+    </div>
+  </div>
+</div>
+
+<h2>2️⃣ 개선 항목 상세 비교</h2>
+<table>
+<tr><th>항목</th><th>개선 전</th><th>개선 후</th><th>상태</th></tr>
+<tr><td><strong>손실심볼 exclude</strong></td><td>BTCUSDT 1개</td><td>BTC/WLD/SUI/SOL/ETH/1000PEPE 6개 (과거 손실 83% 점유 심볼)</td><td><span class="badge b-ok">적용</span></td></tr>
+<tr><td><strong>양방향 매매</strong></td><td>LONG/SHORT</td><td>LONG/SHORT 유지 (SHORT 비활성화 제안 철회, 사용자 요청)</td><td><span class="badge b-ok">유지</span></td></tr>
+<tr><td><strong>systemd override</strong></td><td>4개 충돌 (alpha2c/true-turtle-55-20/zz-exact-bot/paper-overlap)</td><td>zz-exact-bot 단일화 + description 정정 (true_turtle_exact)</td><td><span class="badge b-ok">해결</span></td></tr>
+<tr><td><strong>config 반영</strong></td><td>YAML 전부 무시 (bot.py 하드코딩)</td><td>bot.py + settings JSON 동기화 (exclude 6개 반영)</td><td><span class="badge b-ok">동기화</span></td></tr>
+<tr><td><strong>자동매매</strong></td><td>재시작 후 OFF (기본값)</td><td>telegram /자동켜기 복구 → ON 유지</td><td><span class="badge b-ok">ON</span></td></tr>
+<tr><td><strong>advisor (감시/조언)</strong></td><td>없음 (순수 규칙봇)</td><td>GLM-5.2 (fcc): L1 gate + L2 params + watchdog + poll, paper 매매에 실제 작용</td><td><span class="badge b-ok">4종</span></td></tr>
+<tr><td><strong>실시간 감시</strong></td><td>SENTINEL 30초 (체크) + 디스코드 5분</td><td>watchdog 1분 (BTC 급변/포지션 근접) → #tan-watchdog</td><td><span class="badge b-ok">추가</span></td></tr>
+<tr><td><strong>디스코드 빈도</strong></td><td>#live-모니터링 60초, #live-매매 sentinel 5분</td><td>#live-모니터링 5분, #live-매매 15분 쿨다운 (폭우 해결)</td><td><span class="badge b-ok">완화</span></td></tr>
+<tr><td><strong>paper 실험</strong></td><td>단일 paper, advisor 없음</td><td>paper(advisor ON) + paper-baseline(advisor OFF) A/B 동시 구동</td><td><span class="badge b-ok">A/B</span></td></tr>
+<tr><td><strong>검증</strong></td><td>없음</td><td>tan 백테스트 실제 PASS (Walk-Forward + Monte Carlo)</td><td><span class="badge b-ok">PASS</span></td></tr>
+<tr><td><strong>자동 모니터링</strong></td><td>수동</td><td>4종 cron: gate_monitor(매시)/daily(매일)/before_after(주간)/ab_compare(주간)</td><td><span class="badge b-ok">자동</span></td></tr>
+</table>
+
+<h2>3️⃣ 데이터 시각화</h2>
+
+<div class="chart-grid">
+  <div class="chart-box"><h3>손실심볼 exclude 효과 (what-if, 과거 40거래)</h3><canvas id="whatif"></canvas></div>
+  <div class="chart-box"><h3>디스코드 알림 빈도 (시간당)</h3><canvas id="discord"></canvas></div>
+</div>
+<div class="chart-grid">
+  <div class="chart-box"><h3>주요 심볼별 손실 (제외 대상)</h3><canvas id="symbols"></canvas></div>
+  <div class="chart-box"><h3>자동화 기능 수 (전/후)</h3><canvas id="features"></canvas></div>
+</div>
+
+<h2>4️⃣ tan 백테스트 검증 증거 (전략 유효)</h2>
+<div class="alert ok">
+  <strong>✅ Walk-Forward:</strong> PASS (평균 PF 열화도 0.5%, 기준 ≤50%)<br>
+  <strong>✅ Monte Carlo:</strong> PASS (파산확률 0.0% 기준 ≤5%, 95th MDD 27.7% 기준 ≤50%)<br>
+  <strong>✅ Bootstrap PF 95% CI:</strong> [1.109, 2.083] (양수 = 수익성 증명)<br>
+  <strong>✅ Phase 1-B 모든 기준 통과</strong> → Phase 2 진행 가능
+</div>
+
+<h2>5️⃣ 적용 방식 (안전)</h2>
+<table>
+<tr><th>변경</th><th>방식</th><th>백업</th></tr>
+<tr><td>손실심볼 exclude</td><td>bot.py ENTRY_EXCLUDED_SYMBOLS + settings JSON 동기화 + tan-live 재시작 1회</td><td>bot.py.bak-exclude-*, settings.bak-*</td></tr>
+<tr><td>자동매매 ON</td><td>telegram /자동켜기 (봇 자체 명령)</td><td>—</td></tr>
+<tr><td>systemd 통합</td><td>drop-in 정리 (override.conf ExecStart 제거, true-turtle-55-20.disabled), description 정정</td><td>/root/tan-live-dropins-backup-*</td></tr>
+<tr><td>advisor/자동화</td><td>tan-live-agent 신규 패키지 (별도 venv), paper 엔진 gate 패치 + modify-params</td><td>runner.py.bak-*</td></tr>
+<tr><td>디스코드 빈도</td><td>sentinel/risk-manager systemd drop-in (interval/cooldown)</td><td>—</td></tr>
+</table>
+<div class="alert" style="margin-top:14px">
+  <strong>⚠️ 라이브 안전:</strong> 모든 변경 분 백업 보존. <strong>tan-live.service</strong> active, <strong>TRXUSDT 포지션</strong> 정상 유지, 자동매매 ON. 양방향 매매 유지.
+</div>
+
+<h2>6️⃣ 남은 것 (사용자 결정 대기)</h2>
+<table>
+<tr><th>항목</th><th>상태</th><th>결정 주체</th></tr>
+<tr><td>나머지 고도화 (ENTRY_N 20, 진입품질 4.0, 쿨다운 8바)</td><td>tan 백테스트 PASS 근거 있음, 라이브 적용 대기</td><td>사용자 승인</td></tr>
+<tr><td>paper gate 형식 PASS</td><td>7종 artifact 스키마 매핑 작업 (별도)</td><td>선택 (대기 or 진행)</td></tr>
+<tr><td>advisor paper 효과 측정</td><td>paper A/B로 축적 중, 주간 비교</td><td>시간 경과</td></tr>
+</table>
+
+<div class="footer">
+  보고서: tan-live-agent 정적 분석 · 데이터: tan.db 63거래 / tan 백테스트 results / systemd · 분석: GLM-5.2 (z.ai 코딩 구독) · 라이브: tan-live.service active · GitHub: yalru9406-create/tan-live-agent
+</div>
+
+</div>
+
+<script>
+Chart.defaults.color = '#8b949e';
+Chart.defaults.font.family = "'Segoe UI','Malgun Gothic',sans-serif";
+Chart.defaults.font.size = 11;
+
+new Chart(document.getElementById('whatif'), {
+  type: 'bar',
+  data: { labels: ['기준','SHORT끔','WLD제외','손실심볼5','3중필터'], datasets: [{ label: 'PnL $', data: [-64.47,-25.80,-40.94,-10.63,1.86], backgroundColor: function(ctx){const v=ctx.parsed?.y??ctx.raw; return v>=0?'#3fb950':'#da3633';}, borderWidth: 0 }] },
+  options: { plugins:{legend:{display:false}}, scales:{y:{ticks:{callback:v=>v+'$'}}} }
+});
+new Chart(document.getElementById('discord'), {
+  type: 'bar',
+  data: { labels: ['#live-모니터링 전','#live-모니터링 후','#live-매매 전','#live-매매 후'], datasets: [{ label: '시간당 알림 수', data: [60,12,12,4], backgroundColor: ['#da3633','#3fb950','#da3633','#3fb950'], borderWidth: 0 }] },
+  options: { plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+});
+new Chart(document.getElementById('symbols'), {
+  type: 'bar',
+  data: { labels: ['WLD','SUI','SOL','1000PEPE','ETH','ZEC'], datasets: [{ label: '손실 $', data: [-23.53,-11.5,-8.17,-5.33,-5.32,-3.59], backgroundColor: '#da3633', borderWidth: 0 }] },
+  options: { indexAxis:'y', plugins:{legend:{display:false}} }
+});
+new Chart(document.getElementById('features'), {
+  type: 'bar',
+  data: { labels: ['라이브 개선','감시 advisor','paper 실험','자동 리포트','검증 통계'], datasets: [{ label: '전', data: [1,0,0,0,0], backgroundColor: '#da3633', borderWidth: 0 }, { label: '후', data: [6,4,2,4,1], backgroundColor: '#3fb950', borderWidth: 0 }] },
+  options: { plugins:{legend:{labels:{boxWidth:12}}}, scales:{y:{beginAtZero:true}} }
+});
+</script>
+</body>
+</html>

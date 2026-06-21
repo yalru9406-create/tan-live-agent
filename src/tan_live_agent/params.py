@@ -54,6 +54,7 @@ Output STRICT JSON only (no prose, no markdown fences):
     "entry_min_reward_to_cost": <float>,
     "entry_max_initial_stop_distance_pct": <float>,
     "size_factor": <float 1.0..1.5>
+    "entry_n": <int 20..55>
   }
 }
 
@@ -64,6 +65,7 @@ ABSOLUTE RULES:
 - entry_breakout_atr_buffer in [0.0, 0.3].
 - entry_min_reward_to_cost in [3.0, 6.0].
 - entry_max_initial_stop_distance_pct in [0.10, 0.30].
+- entry_n in [20, 55] (lower = faster breakout entry; 20 catches trends earlier).
 - If regime is benign and baseline is correct, return baseline with size_factor 1.0.
 """
 
