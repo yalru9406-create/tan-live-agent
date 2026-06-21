@@ -24,7 +24,7 @@ import httpx
 from . import context as ctx_mod, journal
 from .config import Settings
 from .models import get_backend, ModelError, AdvisorDecision
-from .discord_report import send_alert
+from .discord_report import send_alert, send_via_bot
 
 
 SPIKE_1M_PCT = float(os.getenv("TAN_WATCHDOG_SPIKE_1M", "0.4"))
@@ -208,14 +208,20 @@ def run_watchdog(settings: Settings) -> WatchdogSummary:
         except ModelError as e:
             summary.errors.append(f"{f.kind} {f.symbol}: {e}")
 
-    if settings.discord_webhook_url:
-        msgs = _format_alert(btc_last, ch_1m, ch_5m, findings, summary.reviews)
-        for m in msgs:
-            try:
+    msgs = _format_alert(btc_last, ch_1m, ch_5m, findings, summary.reviews)
+    for m in msgs:
+        try:
+            if settings.discord_webhook_url:
                 send_alert(settings.discord_webhook_url, m)
-                summary.alerts_sent += 1
-            except Exception as e:
-                summary.errors.append(f"discord: {e}")
+            elif settings.discord_bot_token and settings.discord_watchdog_channel_id:
+                send_via_bot(settings.discord_bot_token, settings.discord_watchdog_channel_id, m)
+            else:
+                # No Discord configured; emit to stdout so the signal is not lost.
+                print(m)
+                continue
+            summary.alerts_sent += 1
+        except Exception as e:
+            summary.errors.append(f"discord: {e}")
 
     return summary
 

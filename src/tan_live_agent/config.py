@@ -47,6 +47,9 @@ class Settings:
     # --- Discord (optional) ---
     discord_webhook_url: str = field(default_factory=lambda: _env("TAN_AGENT_DISCORD_WEBHOOK", ""))
     discord_min_confidence: float = field(default_factory=lambda: float(_env("TAN_AGENT_DISCORD_MIN_CONF", "0.6")))
+    discord_bot_token: str = field(default_factory=lambda: _env("DISCORD_BOT_TOKEN", ""))
+    discord_watchdog_channel_id: str = field(default_factory=lambda: _env("TAN_WATCHDOG_DISCORD_CHANNEL_ID", ""))
+    discord_paper_channel_id: str = field(default_factory=lambda: _env("TAN_PAPER_DISCORD_CHANNEL_ID", ""))
 
     # --- Safety ---
     paper_mode: bool = True  # Always True. This package is paper/shadow only.

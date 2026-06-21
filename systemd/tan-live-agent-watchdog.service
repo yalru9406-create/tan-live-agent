@@ -18,5 +18,6 @@ Environment=TAN_WATCHDOG_SPIKE_1M=0.4
 Environment=TAN_WATCHDOG_SPIKE_5M=1.0
 Environment=TAN_WATCHDOG_TRAIL_PROX=0.4
 Environment=TAN_WATCHDOG_TP_PROX=0.4
+Environment=TAN_WATCHDOG_DISCORD_CHANNEL_ID=1518224983762145303
 # Discord webhook (set TAN_AGENT_DISCORD_WEBHOOK in consolidated.env to enable live alerts)
 ExecStart=/srv/hermes-os/tan-live-agent/.venv/bin/tan-live-agent watchdog
