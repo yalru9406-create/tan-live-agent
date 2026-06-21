@@ -144,6 +144,10 @@ def cmd_watchdog(args, settings: Settings) -> int:
 def cmd_journal_analyze(args, settings: Settings) -> int:
     _print_json(journal.analyze(settings.journal_path, advisor=args.advisor))
     return 0
+def cmd_serve(args, settings: Settings) -> int:
+    from .server import serve
+    serve(host=args.host, port=args.port)
+    return 0
 
 def cmd_journal_recent(args, settings: Settings) -> int:
     rows = journal.recent(settings.journal_path, advisor=args.advisor, limit=args.limit)
@@ -194,6 +198,10 @@ def main(argv=None) -> int:
     s = sub.add_parser("journal-summary", help="aggregate advisor counts")
     s.add_argument("--advisor", default=None, choices=["gate", "params", "watchdog"])
     s.set_defaults(func=cmd_journal_summary)
+    sv = sub.add_parser("serve", help="HTTP advisor service for paper-engine integration (stage 2)")
+    sv.add_argument("--host", default="127.0.0.1")
+    sv.add_argument("--port", type=int, default=8090)
+    sv.set_defaults(func=cmd_serve)
 
     a = sub.add_parser("journal-analyze", help="deep stats + promotion-gate readiness")
     a.add_argument("--advisor", default=None, choices=["gate", "params", "watchdog"])
