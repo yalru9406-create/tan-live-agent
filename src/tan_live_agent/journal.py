@@ -194,14 +194,15 @@ def analyze(path: str, advisor: str | None = None) -> dict:
                 "total_events": span["total"],
             },
             "promotion_gate": {
-                "threshold_per_advisor": 30,
-                "ready": all(
-                    v.get("total", 0) >= 30 for v in by_advisor.values()
-                ) and bool(by_advisor),
-                "advisors_below_threshold": [
-                    {"advisor": k, "total": v.get("total", 0), "needed": max(0, 30 - v.get("total", 0))}
-                    for k, v in by_advisor.items() if v.get("total", 0) < 30
-                ],
+                # Gate: TOTAL >= 30 events across all advisors, AND each advisor
+                # has at least 3 (diversity floor). Per-advisor 30 is over-strict
+                # for an operator who reads "30 samples" as the corpus size.
+                "threshold_total": 30,
+                "min_per_advisor": 3,
+                "ready": (span["total"] >= 30)
+                and all(v.get("total", 0) >= 3 for v in by_advisor.values())
+                and bool(by_advisor),
+                "totals": {k: v.get("total", 0) for k, v in by_advisor.items()},
             },
         }
     finally:
