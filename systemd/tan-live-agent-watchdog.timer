@@ -1,0 +1,14 @@
+# tan-live-agent watchdog timer — every 1 minute.
+# Independent of tan-live.service. Read-only observer + Discord alerter.
+
+[Unit]
+Description=Run tan-live-agent watchdog every minute
+
+[Timer]
+OnBootSec=1min
+OnUnitActiveSec=1min
+AccuracySec=5s
+Persistent=true
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,22 @@
+# tan-live-agent watchdog — runs every 1 minute. READ-ONLY observer+alerter.
+# Never places orders. Detects BTC spikes + position proximity, advises, alerts.
+
+[Unit]
+Description=tan-live-agent watchdog (1-min realtime observer, read-only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/srv/hermes-os/tan-live-agent
+EnvironmentFile=/root/.hermes/secrets/consolidated.env
+Environment=TAN_AGENT_MODEL_BACKEND=gemini
+Environment=TAN_AGENT_JOURNAL=/srv/hermes-os/tan-live-agent/data/advisor_journal.sqlite3
+# Spike thresholds (percent); tune via env without code edits.
+Environment=TAN_WATCHDOG_SPIKE_1M=0.4
+Environment=TAN_WATCHDOG_SPIKE_5M=1.0
+Environment=TAN_WATCHDOG_TRAIL_PROX=0.4
+Environment=TAN_WATCHDOG_TP_PROX=0.4
+# Discord webhook (set TAN_AGENT_DISCORD_WEBHOOK in consolidated.env to enable live alerts)
+ExecStart=/srv/hermes-os/tan-live-agent/.venv/bin/tan-live-agent watchdog

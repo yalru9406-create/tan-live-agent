@@ -6,11 +6,13 @@ Examples:
   tan-live-agent gate-eval --symbol TRXUSDT --direction LONG \\
       --entry 0.327 --stop 0.323 --tp 0.335 --r 2.0
   tan-live-agent params
-  tan-live-agent paper-poll              # one-shot paper poll (L1+L2), used by timer
+  tan-live-agent paper-poll              # one-shot paper poll (L1+L2), 15-min timer
+  tan-live-agent watchdog                # 1-min realtime observer+alerter
   tan-live-agent journal-recent --advisor gate --limit 30
   tan-live-agent journal-summary
 
 All commands run in paper/shadow mode. No command writes to live state.
+The watchdog is READ-ONLY: it observes and alerts, never places orders.
 """
 from __future__ import annotations
 
@@ -122,6 +124,24 @@ def cmd_paper_poll(args, settings: Settings) -> int:
     return 0 if not summary.get("errors") else 1
 
 
+def cmd_watchdog(args, settings: Settings) -> int:
+    from .watchdog import run_watchdog
+
+    summary = run_watchdog(settings)
+    _print_json({
+        "ts_ms": summary.ts_ms,
+        "btc": summary.btc,
+        "btc_1m_pct": summary.btc_1m_pct,
+        "btc_5m_pct": summary.btc_5m_pct,
+        "findings": summary.findings,
+        "reviews": summary.reviews,
+        "alerts_sent": summary.alerts_sent,
+        "errors": summary.errors,
+    })
+    # Exit 0 even with findings (findings are not errors). Exit 2 only on hard errors.
+    return 2 if summary.errors and not summary.reviews else 0
+
+
 def cmd_journal_recent(args, settings: Settings) -> int:
     rows = journal.recent(settings.journal_path, advisor=args.advisor, limit=args.limit)
     _print_json(rows)
@@ -155,16 +175,21 @@ def main(argv=None) -> int:
 
     sub.add_parser(
         "paper-poll",
-        help="one-shot paper poll (L1 over open positions + L2 params); used by systemd timer",
+        help="one-shot paper poll (L1 over open positions + L2 params); 15-min timer",
     ).set_defaults(func=cmd_paper_poll)
 
+    sub.add_parser(
+        "watchdog",
+        help="one-shot realtime watchdog scan (BTC spikes + position proximity); 1-min timer",
+    ).set_defaults(func=cmd_watchdog)
+
     j = sub.add_parser("journal-recent", help="recent advisor events")
-    j.add_argument("--advisor", default=None, choices=["gate", "params"])
+    j.add_argument("--advisor", default=None, choices=["gate", "params", "watchdog"])
     j.add_argument("--limit", type=int, default=30)
     j.set_defaults(func=cmd_journal_recent)
 
     s = sub.add_parser("journal-summary", help="aggregate advisor counts")
-    s.add_argument("--advisor", default=None, choices=["gate", "params"])
+    s.add_argument("--advisor", default=None, choices=["gate", "params", "watchdog"])
     s.set_defaults(func=cmd_journal_summary)
 
     args = p.parse_args(argv)
