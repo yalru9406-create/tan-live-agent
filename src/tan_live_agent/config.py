@@ -30,6 +30,10 @@ class Settings:
 
     # GPT (Codex subscription) — activates 6/25
     gpt_model: str = field(default_factory=lambda: _env("TAN_AGENT_GPT_MODEL", "gpt-5.5"))
+    # FCC (free-claude-code local proxy -> z.ai coding subscription, GLM-5.x via Anthropic Messages API)
+    # This is the quota-paid path on the VPS. Use TAN_AGENT_MODEL_BACKEND=fcc.
+    fcc_endpoint: str = field(default_factory=lambda: _env("TAN_AGENT_FCC_ENDPOINT", "http://127.0.0.1:8082/v1/messages"))
+    fcc_model: str = field(default_factory=lambda: _env("TAN_AGENT_FCC_MODEL", "glm-5.2"))
 
     # --- LLM behavior ---
     advisor_temperature: float = field(default_factory=lambda: float(_env("TAN_AGENT_TEMPERATURE", "0.2")))

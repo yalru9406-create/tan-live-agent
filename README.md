@@ -71,10 +71,10 @@ shadow (read+alert only, never acts).
 ### Backend switch (no code change)
 | When | Env | Notes |
 |---|---|---|
-| Now | `TAN_AGENT_MODEL_BACKEND=gemini` | Default; Gemini 2.5 Flash. Free-tier 429s under burst. |
-| After Z.AI/Zhipu credit recharge | `TAN_AGENT_MODEL_BACKEND=glm` | `GLM_API_KEY` already in consolidated.env. Better quota. |
-| On/after 6/25 (Codex token refill) | `TAN_AGENT_MODEL_BACKEND=gpt` | GPT-5.5 via Codex subscription. Highest quality. |
-
+| **Now (recommended)** | `TAN_AGENT_MODEL_BACKEND=fcc` | GLM-5.2 via z.ai coding subscription (fcc-server @ 127.0.0.1:8082). No per-token billing; uses 5h/weekly quota. |
+| Gemini fallback | `TAN_AGENT_MODEL_BACKEND=gemini` | Gemini 2.5 Flash. Free-tier 429s under burst. |
+| GLM direct (pay-as-you-go) | `TAN_AGENT_MODEL_BACKEND=glm` | `GLM_API_KEY` direct to z.ai/bigmodel. Requires credit recharge. |
+| On/after 6/25 (Codex refill) | `TAN_AGENT_MODEL_BACKEND=gpt` | GPT-5.5 via Codex subscription. |
 Switch is a single env var in the systemd unit (`tan-live-agent-watchdog.service`
 and `tan-live-agent-poll.service`), then `systemctl daemon-reload`. No code edit.
 

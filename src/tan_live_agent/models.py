@@ -188,10 +188,57 @@ class GptBackend(ModelBackend):
             "Set TAN_AGENT_MODEL_BACKEND=gemini (now) or =glm (after Z.AI recharge)."
         )
 
+class FccBackend(ModelBackend):
+    """free-claude-code local proxy -> z.ai coding subscription.
+
+    Routes Anthropic Messages API (SSE-streamed) through the fcc-server on
+    127.0.0.1:8082. This is the quota-paid GLM-5.x path on the VPS: no API key,
+    no per-token billing — consumes the operator's z.ai coding subscription
+    (5h/weekly quota). Use TAN_AGENT_MODEL_BACKEND=fcc.
+    """
+
+    name = "glm-5.2"
+
+    def _complete(self, system, user, max_tokens):
+        import time as _t
+        url = self.settings.fcc_endpoint
+        body = {
+            "model": self.settings.fcc_model,
+            "max_tokens": max_tokens,
+            "stream": True,
+            "system": system,
+            "messages": [{"role": "user", "content": user}],
+        }
+        headers = {
+            "content-type": "application/json",
+            "anthropic-version": "2023-06-01",
+        }
+        parts: list[str] = []
+        t0 = _t.time()
+        try:
+            with httpx.Client(timeout=self.settings.advisor_timeout_s) as c:
+                with c.stream("POST", url, json=body, headers=headers) as r:
+                    r.raise_for_status()
+                    for line in r.iter_lines():
+                        if not line or not line.startswith("data: "):
+                            continue
+                        try:
+                            ev = json.loads(line[6:])
+                        except Exception:
+                            continue
+                        if ev.get("type") == "content_block_delta":
+                            d = ev.get("delta") or {}
+                            if d.get("type") == "text_delta":
+                                parts.append(d.get("text") or "")
+        except httpx.HTTPError as e:
+            raise ModelError(f"FCC HTTP error: {e}")
+        self.name = self.settings.fcc_model
+        return "".join(parts), int((_t.time() - t0) * 1000)
 
 _BACKENDS: dict[str, type[ModelBackend]] = {
     "gemini": GeminiBackend,
     "glm": GlmBackend,
+    "fcc": FccBackend,
     "gpt": GptBackend,
     "gpt-5.5": GptBackend,
     "gpt5.5": GptBackend,

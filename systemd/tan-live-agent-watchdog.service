@@ -11,7 +11,7 @@ Type=oneshot
 User=root
 WorkingDirectory=/srv/hermes-os/tan-live-agent
 EnvironmentFile=/root/.hermes/secrets/consolidated.env
-Environment=TAN_AGENT_MODEL_BACKEND=gemini
+Environment=TAN_AGENT_MODEL_BACKEND=fcc
 Environment=TAN_AGENT_JOURNAL=/srv/hermes-os/tan-live-agent/data/advisor_journal.sqlite3
 # Spike thresholds (percent); tune via env without code edits.
 Environment=TAN_WATCHDOG_SPIKE_1M=0.4
