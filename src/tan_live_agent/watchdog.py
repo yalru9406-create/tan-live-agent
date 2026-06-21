@@ -96,6 +96,25 @@ def _symbol_price(symbol: str) -> float | None:
 
 def _pct(a: float, b: float) -> float:
     return abs(a - b) / a * 100.0 if a else 0.0
+def _normalize_action(raw: str, rationale: str) -> str:
+    """Normalize advisor action label.
+
+    Some backends return gate-style labels (approve/reject/modify) even for a
+    position review. Use rationale keywords to recover the intended
+    hold / tighten-protection / exit action. Defaults to 'hold' because on an
+    EXISTING position capital is preserved by holding unless an exit is signaled.
+    """
+    if not raw:
+        return "hold"
+    r = str(raw).lower().strip()
+    if r in {"hold", "tighten-protection", "exit"}:
+        return r
+    low = (rationale or "").lower()
+    if any(w in low for w in ["exit", "청산", "close", "정리", "flat", "liquidate", "flatten"]):
+        return "exit"
+    if any(w in low for w in ["tighten", "보호", "raise trail", "프로텍션", "stop closer", "bring stop"]):
+        return "tighten-protection"
+    return "hold"
 
 
 def scan(btc_last: float, ch_1m: float, ch_5m: float, positions: list[dict]) -> list[WatchdogFinding]:
@@ -200,7 +219,7 @@ def run_watchdog(settings: Settings) -> WatchdogSummary:
             )
             summary.reviews.append({
                 "kind": f.kind, "symbol": f.symbol, "severity": f.severity,
-                "action": (d.params or {}).get("action") or d.decision,
+                "action": _normalize_action((d.params or {}).get("action") or d.decision, d.rationale),
                 "confidence": d.confidence,
                 "rationale": d.rationale,
                 "params": d.params,

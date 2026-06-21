@@ -52,3 +52,35 @@ tan-live-agent journal-summary
   restarts any `tan-*` service.
 - All advisor decisions are journaled to `data/advisor_journal.sqlite3` for
   offline hit-rate validation.
+
+## Validation & backend switching
+
+### 30-sample promotion gate
+Both timers accumulate advisor decisions into `data/advisor_journal.sqlite3`.
+Check progress any time:
+```bash
+tan-live-agent journal-summary                  # total + by-decision + avg confidence
+tan-live-agent journal-summary --advisor gate   # L1 only
+tan-live-agent journal-summary --advisor params # L2 only
+tan-live-agent journal-recent --advisor watchdog --limit 20
+```
+Promotion path to live (stage 2/3) opens once each advisor has 30+ samples
+with a non-degenerate decision distribution. Until then the advisor stays
+shadow (read+alert only, never acts).
+
+### Backend switch (no code change)
+| When | Env | Notes |
+|---|---|---|
+| Now | `TAN_AGENT_MODEL_BACKEND=gemini` | Default; Gemini 2.5 Flash. Free-tier 429s under burst. |
+| After Z.AI/Zhipu credit recharge | `TAN_AGENT_MODEL_BACKEND=glm` | `GLM_API_KEY` already in consolidated.env. Better quota. |
+| On/after 6/25 (Codex token refill) | `TAN_AGENT_MODEL_BACKEND=gpt` | GPT-5.5 via Codex subscription. Highest quality. |
+
+Switch is a single env var in the systemd unit (`tan-live-agent-watchdog.service`
+and `tan-live-agent-poll.service`), then `systemctl daemon-reload`. No code edit.
+
+### What the advisor does NOT do (by design)
+- It does not place orders, reduce sizes below baseline, or restart live services.
+- Watchdog alerts are read-only observations (`hold` / `tighten-protection` /
+  `exit` suggestions). The live bot is free to ignore them.
+- Action labels are normalized from rationale keywords (`reject` from the model
+  is mapped to `hold` on an existing position unless the rationale says exit).
