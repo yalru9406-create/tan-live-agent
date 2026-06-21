@@ -1,0 +1,24 @@
+[project]
+name = "tan-live-agent"
+version = "0.1.0"
+description = "LLM advisor layer for TAN trading. L1 entry gate + L2 parameter advisor. Paper/shadow mode only, never touches live orders."
+readme = "README.md"
+requires-python = ">=3.11"
+authors = [{ name = "yalru" }]
+dependencies = [
+  "httpx>=0.27",
+  "tenacity>=8.2",
+]
+
+[project.scripts]
+tan-live-agent = "tan_live_agent.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/tan_live_agent"]
+
+[tool.hatch.build.targets.sdist]
+include = ["src", "tests", "systemd", "README.md", "pyproject.toml"]

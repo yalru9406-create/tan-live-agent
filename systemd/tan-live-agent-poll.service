@@ -1,0 +1,20 @@
+# tan-live-agent paper poll — runs every 15 min in shadow mode.
+# Independent of tan-live.service. Reads live state (read-only), writes only
+# to its own journal. Never places orders.
+
+[Unit]
+Description=tan-live-agent paper poll (L1 gate + L2 params, shadow only)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/srv/hermes-os/tan-live-agent
+EnvironmentFile=/root/.hermes/secrets/consolidated.env
+Environment=TAN_AGENT_MODEL_BACKEND=gemini
+Environment=TAN_AGENT_JOURNAL=/srv/hermes-os/tan-live-agent/data/advisor_journal.sqlite3
+ExecStart=/srv/hermes-os/tan-live-agent/.venv/bin/tan-live-agent paper-poll
+# paper-poll subcommand (added after core validation) walks the latest bar,
+# builds hypothetical entries from the live strategy's shadow state, and journals
+# L1 + L2 decisions. It does not place orders.
