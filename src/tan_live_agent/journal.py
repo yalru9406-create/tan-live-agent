@@ -137,3 +137,72 @@ def summarize(path: str, advisor: str | None = None) -> dict:
         }
     finally:
         conn.close()
+def analyze(path: str, advisor: str | None = None) -> dict:
+    """Deeper stats for advisor value assessment.
+
+    Returns per-advisor decision distribution with confidence bands, symbol
+    coverage, latency, and time span. This is the foundation for the
+    'advisor on vs off' comparison: once 30+ samples per advisor exist,
+    join gate decisions to live trade outcomes (symbol+ts) to measure whether
+    advisor-rejected entries were actually losers.
+    """
+    conn = _connect(path)
+    try:
+        base = "FROM advisor_events"
+        params: tuple = ()
+        if advisor:
+            base += " WHERE advisor=?"
+            params = (advisor,)
+        rows = conn.execute(
+            f"SELECT advisor, decision, COUNT(*) n, "
+            f" ROUND(AVG(confidence),3) avg_conf, "
+            f" ROUND(MIN(confidence),3) min_conf, "
+            f" ROUND(MAX(confidence),3) max_conf, "
+            f" ROUND(AVG(latency_ms)) avg_latency_ms "
+            f"{base} GROUP BY advisor, decision ORDER BY advisor, n DESC",
+            params,
+        ).fetchall()
+        by_advisor: dict[str, dict] = {}
+        for r in rows:
+            d = dict(r)
+            a = d["advisor"]
+            by_advisor.setdefault(a, {"total": 0, "decisions": {}})
+            by_advisor[a]["total"] += d["n"]
+            by_advisor[a]["decisions"][d["decision"]] = {
+                "n": d["n"],
+                "avg_confidence": d["avg_conf"],
+                "min_confidence": d["min_conf"],
+                "max_confidence": d["max_conf"],
+                "avg_latency_ms": d["avg_latency_ms"],
+            }
+        # symbol coverage + time span
+        sym_rows = conn.execute(
+            f"SELECT advisor, COUNT(DISTINCT symbol) distinct_symbols {base} GROUP BY advisor",
+            params,
+        ).fetchall()
+        for r in sym_rows:
+            by_advisor.setdefault(r["advisor"], {})["distinct_symbols"] = r["distinct_symbols"]
+        span = conn.execute(
+            f"SELECT MIN(ts_ms) first_ms, MAX(ts_ms) last_ms, COUNT(*) total {base}",
+            params,
+        ).fetchone()
+        return {
+            "by_advisor": by_advisor,
+            "time_span": {
+                "first_ms": span["first_ms"],
+                "last_ms": span["last_ms"],
+                "total_events": span["total"],
+            },
+            "promotion_gate": {
+                "threshold_per_advisor": 30,
+                "ready": all(
+                    v.get("total", 0) >= 30 for v in by_advisor.values()
+                ) and bool(by_advisor),
+                "advisors_below_threshold": [
+                    {"advisor": k, "total": v.get("total", 0), "needed": max(0, 30 - v.get("total", 0))}
+                    for k, v in by_advisor.items() if v.get("total", 0) < 30
+                ],
+            },
+        }
+    finally:
+        conn.close()

@@ -141,6 +141,9 @@ def cmd_watchdog(args, settings: Settings) -> int:
     # Exit 0 even with findings (findings are not errors). Exit 2 only on hard errors.
     return 2 if summary.errors and not summary.reviews else 0
 
+def cmd_journal_analyze(args, settings: Settings) -> int:
+    _print_json(journal.analyze(settings.journal_path, advisor=args.advisor))
+    return 0
 
 def cmd_journal_recent(args, settings: Settings) -> int:
     rows = journal.recent(settings.journal_path, advisor=args.advisor, limit=args.limit)
@@ -192,6 +195,9 @@ def main(argv=None) -> int:
     s.add_argument("--advisor", default=None, choices=["gate", "params", "watchdog"])
     s.set_defaults(func=cmd_journal_summary)
 
+    a = sub.add_parser("journal-analyze", help="deep stats + promotion-gate readiness")
+    a.add_argument("--advisor", default=None, choices=["gate", "params", "watchdog"])
+    a.set_defaults(func=cmd_journal_analyze)
     args = p.parse_args(argv)
     if args.backend:
         os.environ["TAN_AGENT_MODEL_BACKEND"] = args.backend

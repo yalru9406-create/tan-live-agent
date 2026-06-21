@@ -207,7 +207,7 @@ def run_watchdog(settings: Settings) -> WatchdogSummary:
                 advisor="watchdog",
                 model=backend.name,
                 decision=AdvisorDecision(
-                    decision=d.decision if d.decision else str(d.params or {}).get("action", "hold"),
+                    decision=_normalize_action((d.params or {}).get("action") or d.decision, d.rationale),
                     confidence=d.confidence,
                     rationale=d.rationale,
                     params=d.params,
